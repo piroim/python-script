@@ -10,16 +10,17 @@ class HTMLParser:
         self.soup = BeautifulSoup(html, 'html.parser')
         self._inputs_in_forms = set()
     
-    """ form 태그, input 태그 수집 (다른 태그 있으면 여기에 추가) """
+    """ 데이터 추출 함수 (form 태그, input 태그) """
     def parse_all(self) -> ParseResult:
         return ParseResult(
-            forms=self.parse_forms(),
-            standalone_inputs=self.parse_standalone_inputs()
+            forms=self.parse_forms(), #parse_forms() 함수 실행 결과를 forms 변수에 저장
+            standalone_inputs=self.parse_standalone_inputs() #parse_standalone_inputs() 함수 실행 결과를 standalone_inputs 변수에 저장
         )
     
     def parse_forms(self) -> list:
         forms = []
         
+        #enumerate는 Index 설정을 위해 사용
         for idx, form in enumerate(self.soup.find_all('form'), 1):
             action = form.get('action', '')
             #form 태그 정보 수집
@@ -44,7 +45,7 @@ class HTMLParser:
             
             #Code Debug
             forms.append(form_data)
-            # print(form.prettify())
+            print(form.prettify())
         return forms
     
     """ form 태그 외부의 Input 태그 수집 """
@@ -74,9 +75,9 @@ def print_result(result: ParseResult):
     print(f"{col.GREEN}{'='*60}{col.END}")
     
     for form in result.forms:
-        print(f"\n[Form #{form['index']}] {form['method']} {form['action']}")
-        print(f"  ID: {form['id']}")
-
+        #나중에 추가할 것 : 상태코드가 200 이면 Access, 404 이면 Denied 출력
+        print(f"\n[Form #{form['index']}] {form['method']} {form['action']} [상태코드]")
+        print(f"  ID  : {form['id']}")
         #form 태그 정보 출력
 
 
@@ -85,19 +86,30 @@ def print_result(result: ParseResult):
             print(f"  포함된 Input ({len(form['inputs'])}개):")
             for inp in form['inputs']:
                 print(f"    └ <{inp['tag']} name='{inp['name']}' type='{inp['type']}' id='{inp['id']}' value='{inp['value']}'>")
+        print(colors(f"  결과 : [{form['method']}] {form['action']}", "blue"))
 
     if result.standalone_inputs:
         print(f"\n[Input]")
         for inp in result.standalone_inputs:
             print(f"  └ <{inp['tag']} name='{inp['name']}' type='{inp['type']}' id='{inp['id']}' value='{inp['value']}'>")
-            # print(f"  └ <{inp['tag']}> name='{inp['name']}' type='{inp['type']}' id='{inp['id']}' value='{inp['value']}' (부모: {inp['parent_tag']})")
     
     print('='*60)
-    ext_save(result)
+    # ext_save(result)
+
+def check_status_code(result: ParseResult):
+    print(result)
+
+    for form in result.forms:
+        print(form)
+    #     res = requests.post()
+    #     if res.status_code == 200:
+    #         print(f"  [상태코드] {res.status_code} [접근가능]")
+    #     else:
+    #         print(f"  [상태코드] {res.status_code} [접근불가능]")
 
 # 사용
 def form_ext2(data: str):
     parser = HTMLParser(data)
-    result = parser.parse_all()
-    print(result)
+    result = parser.parse_all() #패턴에 맞는 데이터 추출
+    # check_status_code(result)
     print_result(result)
